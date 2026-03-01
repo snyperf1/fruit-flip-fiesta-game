@@ -17,7 +17,7 @@ const BOARD_Y = 96;
 const FRUITS = ["🍎", "🍌", "🍇", "🍓", "🍍", "🥝", "🍒", "🍑"];
 
 const state = {
-  mode: "menu",
+  mode: "playing",
   cards: [],
   selected: [],
   pendingHide: null,
@@ -253,6 +253,16 @@ function drawHud() {
   ctx.fillText(`Pairs ${state.matches}/${FRUITS.length}`, 500, 50);
   ctx.fillText(`Time ${state.elapsed.toFixed(1)}s`, 670, 50);
   ctx.fillText(`Best Streak ${state.bestStreak}`, 790, 50);
+
+  ctx.font = "600 13px 'Outfit', sans-serif";
+  ctx.fillStyle = "rgba(90, 58, 32, 0.8)";
+  if (state.mode === "won") {
+    ctx.fillText("Perfect harvest! Click, Enter, or R to play again.", 44, 72);
+  } else if (state.pendingHide) {
+    ctx.fillText("No match. Remember those card positions.", 44, 72);
+  } else {
+    ctx.fillText("Tap cards to find matching fruit pairs.", 44, 72);
+  }
 }
 
 function drawCardBack(card) {
@@ -341,26 +351,6 @@ function drawSparkles() {
   ctx.globalAlpha = 1;
 }
 
-function drawOverlay(title, lines) {
-  roundRect(178, 140, 604, 252, 24);
-  ctx.fillStyle = "rgba(59, 37, 13, 0.72)";
-  ctx.fill();
-  ctx.strokeStyle = "rgba(255, 204, 113, 0.65)";
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  ctx.fillStyle = "#fff8e5";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.font = "800 44px 'Baloo 2', sans-serif";
-  ctx.fillText(title, BASE_WIDTH / 2, 194);
-
-  ctx.font = "600 19px 'Outfit', sans-serif";
-  lines.forEach((line, index) => {
-    ctx.fillText(line, BASE_WIDTH / 2, 238 + index * 32);
-  });
-}
-
 function render() {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
@@ -369,29 +359,6 @@ function render() {
   drawHud();
   drawBoard();
   drawSparkles();
-
-  if (state.mode === "menu") {
-    drawOverlay("Fruit Flip Fiesta", [
-      "Match all fruit emoji pairs as fast as you can.",
-      "Tap/click cards to flip them.",
-      "Press Enter to start, R to reset, F for fullscreen.",
-      "Tap anywhere to begin.",
-    ]);
-  } else if (state.mode === "won") {
-    drawOverlay("Perfect Harvest!", [
-      `You solved it in ${state.moves} moves and ${state.elapsed.toFixed(1)} seconds.`,
-      `Best streak: ${state.bestStreak}  |  Total pairs: ${FRUITS.length}`,
-      "Press Enter, R, or tap to play again.",
-      "",
-    ]);
-  } else if (state.pendingHide) {
-    drawOverlay("Hold That Thought", [
-      "Those cards don't match.",
-      "Memorize their positions before they flip back.",
-      "",
-      "",
-    ]);
-  }
 }
 
 function step(timestamp) {
@@ -462,11 +429,6 @@ function toCanvasPoint(event) {
 canvas.addEventListener("pointerdown", (event) => {
   const point = toCanvasPoint(event);
 
-  if (state.mode === "menu") {
-    startGame();
-    return;
-  }
-
   if (state.mode === "won") {
     startGame();
     return;
@@ -487,7 +449,7 @@ window.addEventListener("keydown", (event) => {
     event.preventDefault();
   }
 
-  if (event.code === "Enter" && (state.mode === "menu" || state.mode === "won")) {
+  if (event.code === "Enter" && state.mode === "won") {
     startGame();
   }
 
@@ -499,11 +461,7 @@ window.addEventListener("keydown", (event) => {
     toggleFullscreen();
   }
 
-  if (event.code === "KeyM") {
-    state.mode = "menu";
-    resetBoard();
-  }
 });
 
-resetBoard();
+startGame();
 requestAnimationFrame(step);
